@@ -17,12 +17,12 @@ const PinBox = ({ data, column }) => {
   const groupId = column.parent.groupId;
   const groupData = normalizeData(data, groupId);
 
-  console.log({ groupData });
-
   if (!groupData.isGroupRow) return <div />;
 
   return (
-    <div onClick={() => dispatch({ type: "ACTION" })}>{groupData.name}</div>
+    <div onClick={() => dispatch({ type: "ACTION" })} className="groupRow">
+      {groupData.name}
+    </div>
   );
 };
 

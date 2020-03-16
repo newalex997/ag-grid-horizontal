@@ -5,8 +5,44 @@ import { set, lensProp, findIndex, move } from "ramda";
 
 const getFieldPrefix = field => field.split("-")[0];
 
+const normalizeData = (data, groupId) =>
+  Object.keys(data).reduce((acc, key) => {
+    if (key.split("-")[1] === groupId) {
+      return { ...acc, [getFieldPrefix(key)]: data[key] };
+    }
+
+    return acc;
+  }, {});
+
 const isFirstColumn = cell => {
   return cell.column.colId === cell.column.parent.displayedChildren[0].colId;
+};
+
+const getCellStyle = cell => {
+  const firstcolumn = isFirstColumn(cell);
+  const cellData = normalizeData(cell.data, cell.column.parent.groupId);
+  const rowWidth = cell.column.parent.getActualWidth();
+
+  switch (true) {
+    case firstcolumn && cellData.isGroupRow:
+      return {
+        "z-index": 99,
+        "text-align": "left",
+        "border-left": "2px solid red",
+        position: "absolute",
+        background: "#61dafb",
+        width: `${rowWidth}px`
+      };
+
+    case cellData.isGroupRow:
+      return {
+        background: "#61dafb"
+      };
+    case firstcolumn:
+      return { "border-left": "2px solid red" };
+    default:
+      return null;
+  }
 };
 
 const spliceArray = (arr, n) => {
@@ -125,8 +161,7 @@ class HorizontalGrid extends Component {
     const bulkGridAttributes = createDataBulks(rowData, columnDefs);
 
     const defaultColDef = {
-      cellStyle: cell =>
-        isFirstColumn(cell) ? { "border-left": "2px solid red" } : null
+      cellStyle: getCellStyle
     };
 
     return (

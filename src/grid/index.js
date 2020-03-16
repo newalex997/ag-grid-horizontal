@@ -3,7 +3,6 @@ import HorizontalGrid from "./Horizontal";
 import VerticalGrid from "./Vertical";
 import { connect } from "react-redux";
 import PinBox from "./PinBox";
-
 import { splitEvery, flatten } from "ramda";
 
 class Grid extends Component {
@@ -14,8 +13,8 @@ class Grid extends Component {
         {
           headerName: "Pin",
           field: "index",
-          width: 100,
-          cellRendererFramework: PinBox
+          cellRendererFramework: PinBox,
+          width: 20
         },
         {
           headerName: "Name",
