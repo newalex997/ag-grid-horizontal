@@ -38,6 +38,11 @@ const getCellStyle = cell => {
       return {
         background: "#61dafb"
       };
+    case cellData.highlight:
+      return {
+        background: "#FB8C00",
+        color: "#fff"
+      };
     case firstcolumn:
       return { "border-left": "2px solid red" };
     default:
@@ -124,14 +129,12 @@ class HorizontalGrid extends Component {
     if (!gridApi.finished || !gridApi.column) return;
 
     updateAllSomeFields(gridApi, "width", gridApi.column.actualWidth);
-    this.props.onColumnResized(gridApi);
   };
 
   columnVisible = gridApi => {
     if (!gridApi.column) return;
 
     updateAllSomeFields(gridApi, "hide", !gridApi.column.visible);
-    this.props.onColumnVisible(gridApi);
   };
 
   columnMoved = gridApi => {
