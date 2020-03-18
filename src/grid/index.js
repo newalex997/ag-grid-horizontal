@@ -96,7 +96,7 @@ class Grid extends Component {
         ("" + a.column).localeCompare(b.column)
       );
       const highlightIndex = !highlightCell
-        ? -1
+        ? 0
         : findIndex(
             ({ column, rowIndex }) =>
               column === highlightCell.column &&
@@ -112,34 +112,21 @@ class Grid extends Component {
       const nextHighlightCell = matchingCells[nextHighlightIndex];
 
       this.setState({ highlightCell: nextHighlightCell }, () => {
+        gridApi.api.ensureColumnVisible(nextHighlightCell.column);
+        const groupId = nextHighlightCell.column.split("-")[1];
+
+        const allgroupColumns = this.state.columnDefs.reduce(
+          (acc, col) => [...acc, `${col.field}-${groupId}`],
+          []
+        );
+
+        console.log({ allgroupColumns });
         gridApi.api.flashCells({
-          columns: [nextHighlightCell.column],
+          columns: allgroupColumns,
           rowNodes: [nextHighlightCell.node]
         });
-
-        gridApi.api.setFocusedCell(
-          nextHighlightCell.rowIndex,
-          nextHighlightCell.column
-        );
-        gridApi.api.ensureColumnVisible(nextHighlightCell.column);
       });
     }
-
-    // const highlightIndex = rowData.findIndex(
-    //   row => !row.isGroupRow && !row.highlight && row.athlete.includes(value)
-    // );
-
-    // console.log({ highlightIndex, value, gridApi });
-
-    // if (highlightIndex !== -1) {
-    //   this.setState({
-    //     rowData: update(
-    //       highlightIndex,
-    //       { ...rowData[highlightIndex], highlight: true },
-    //       rowData
-    //     )
-    //   });
-    // }
   }
 
   onGridReady = gridApi => {

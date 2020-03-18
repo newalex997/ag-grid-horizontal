@@ -38,11 +38,6 @@ const getCellStyle = cell => {
       return {
         background: "#61dafb"
       };
-    case cellData.highlight:
-      return {
-        background: "#FB8C00",
-        color: "#fff"
-      };
     case firstcolumn:
       return { "border-left": "2px solid red" };
     default:
