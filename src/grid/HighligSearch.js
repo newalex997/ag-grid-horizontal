@@ -5,7 +5,7 @@ const HighligSearch = ({ onChange }) => {
     <input
       type="text"
       onKeyDown={e => {
-        if (e.keyCode == 13) {
+        if (e.keyCode === 13) {
           onChange(e.target.value);
         }
       }}

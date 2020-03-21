@@ -1,23 +1,29 @@
 import React, { Component } from "react";
 import HorizontalGrid from "./Horizontal";
-import VerticalGrid from "./Vertical";
 import { connect } from "react-redux";
 import HighligSearch from "./HighligSearch";
 import PinBox from "./PinBox";
-import { splitEvery, flatten, findIndex } from "ramda";
+import { splitEvery, flatten } from "ramda";
+import { flashMatchRow } from "./utils";
 
 class Grid extends Component {
   constructor(props) {
     super(props);
     this.state = {
       gridApi: null,
-      highlightCell: null,
+      highlightRow: null,
       columnDefs: [
         {
           headerName: "Pin",
-          field: "index",
+          field: "pin",
           cellRendererFramework: PinBox,
           width: 20
+        },
+        {
+          headerName: "Index",
+          field: "index",
+          width: 100,
+          resizable: true
         },
         {
           headerName: "Name",
@@ -45,8 +51,6 @@ class Grid extends Component {
       rowData: [],
       horizontalMode: true
     };
-
-    this.onSearchChange = this.onSearchChange.bind(this);
   }
 
   insertGroupRow = rows => {
@@ -66,82 +70,29 @@ class Grid extends Component {
       .then(result => result.json())
       .then(rowData => {
         const nextData = rowData
-          .splice(0, 150)
+          .splice(0, 2000)
           .map((el, i) => ({ ...el, index: i }));
         this.setState({ rowData: this.insertGroupRow(nextData) });
       });
-  }
-
-  onSearchChange(value) {
-    const { gridApi, highlightCell } = this.state;
-
-    const matchingCells = [];
-
-    gridApi.api.forEachNode((node, index) => {
-      const rowMatchingCells = Object.keys(node.data).reduce((acc, key) => {
-        if (key.split("-")[0] === "athlete" && node.data[key].includes(value)) {
-          return [...acc, { column: key, rowIndex: index, node }];
-        }
-
-        return acc;
-      }, []);
-
-      matchingCells.push(...rowMatchingCells);
-    });
-
-    if (!matchingCells.length) {
-      this.setState({ highlightCell: null });
-    } else {
-      const orderedrows = matchingCells.sort((a, b) =>
-        ("" + a.column).localeCompare(b.column)
-      );
-      const highlightIndex = !highlightCell
-        ? 0
-        : findIndex(
-            ({ column, rowIndex }) =>
-              column === highlightCell.column &&
-              rowIndex === highlightCell.rowIndex,
-            orderedrows
-          );
-
-      const nextHighlightIndex =
-        highlightIndex === -1 || highlightIndex === matchingCells.length - 1
-          ? 0
-          : highlightIndex + 1;
-
-      const nextHighlightCell = matchingCells[nextHighlightIndex];
-
-      this.setState({ highlightCell: nextHighlightCell }, () => {
-        gridApi.api.ensureColumnVisible(nextHighlightCell.column);
-        const groupId = nextHighlightCell.column.split("-")[1];
-
-        const allgroupColumns = this.state.columnDefs.reduce(
-          (acc, col) => [...acc, `${col.field}-${groupId}`],
-          []
-        );
-
-        console.log({ allgroupColumns });
-        gridApi.api.flashCells({
-          columns: allgroupColumns,
-          rowNodes: [nextHighlightCell.node]
-        });
-      });
-    }
   }
 
   onGridReady = gridApi => {
     this.setState({ gridApi });
   };
 
+  setHighlightRow = highlightRow => {
+    this.setState({ highlightRow });
+  };
+
   render() {
-    const Grid = this.state.horizontalMode ? HorizontalGrid : VerticalGrid;
+    const { gridApi, highlightRow, horizontalMode } = this.state;
 
     return (
       <div
         className="ag-theme-balham"
         style={{
-          height: "800px",
-          width: "800px"
+          height: "790px",
+          width: "1200px"
         }}
       >
         <button
@@ -151,11 +102,19 @@ class Grid extends Component {
         >
           switch mode
         </button>
-        <HighligSearch onChange={this.onSearchChange.bind(this)} />
-        <Grid
+        <HighligSearch
+          onChange={flashMatchRow({
+            gridApi,
+            highlightRow,
+            horizontalMode,
+            setHighlightRow: this.setHighlightRow
+          })}
+        />
+        <HorizontalGrid
           onGridReady={this.onGridReady}
           rowData={this.state.rowData}
           columnDefs={this.state.columnDefs}
+          horizontalMode={this.state.horizontalMode}
         />
       </div>
     );

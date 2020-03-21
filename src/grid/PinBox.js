@@ -1,23 +1,18 @@
 import React from "react";
 import { useDispatch } from "react-redux";
+import { normalizeData } from "./utils";
 
-const getFieldPrefix = field => field.split("-")[0];
-
-const normalizeData = (data, groupId) =>
-  Object.keys(data).reduce((acc, key) => {
-    if (key.split("-")[1] === groupId) {
-      return { ...acc, [getFieldPrefix(key)]: data[key] };
-    }
-
-    return acc;
-  }, {});
-
-const PinBox = ({ data, column }) => {
+const PinBox = ({
+  data,
+  column,
+  agGridReact: {
+    props: { horizontalMode }
+  }
+}) => {
   const dispatch = useDispatch();
-  const groupId = column.parent.groupId;
-  const groupData = normalizeData(data, groupId);
+  const groupData = horizontalMode ? normalizeData(data, column) : data;
 
-  if (!groupData.isGroupRow) return <div />;
+  if (!groupData.isGroupRow) return <div>O</div>;
 
   return (
     <div onClick={() => dispatch({ type: "ACTION" })} className="groupRow">
