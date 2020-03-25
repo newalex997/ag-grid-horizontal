@@ -6,6 +6,19 @@ import PinBox from "./PinBox";
 import { splitEvery, flatten } from "ramda";
 import { flashMatchRow } from "./utils";
 
+const cellStyle = function(params) {
+  const number = params.colDef.field.split('-')[1]
+  const highlight = params.data[`highlight-${number}`]
+  
+  if (highlight){
+      return { backgroundColor: '#59d983'}
+  }
+  
+  return {
+    backgroundColor: 'white',
+  };  
+}
+
 class Grid extends Component {
   constructor(props) {
     super(props);
@@ -17,35 +30,46 @@ class Grid extends Component {
           headerName: "Pin",
           field: "pin",
           cellRendererFramework: PinBox,
-          width: 20
+          width: 20,
         },
         {
           headerName: "Index",
           field: "index",
           width: 100,
-          resizable: true
+          resizable: true,
+          cellStyle,
         },
         {
           headerName: "Name",
           field: "athlete",
           width: 150,
-          resizable: true
+          resizable: true,
+          cellStyle,
         },
         {
           headerName: "Age",
           field: "age",
-          width: 80
+          width: 80,
+          cellStyle,
         },
         {
           headerName: "Country",
           field: "country",
           width: 80,
-          resizable: true
+          resizable: true,
+          cellStyle,
         },
         {
           headerName: "Year",
           field: "year",
-          width: 80
+          width: 80,
+          cellStyle,
+        },
+        {
+          headerName: "Highlight",
+          field: "highlight",
+          highlight: false,
+          hide: true,
         }
       ],
       rowData: [],
