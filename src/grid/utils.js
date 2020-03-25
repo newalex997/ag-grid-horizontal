@@ -1,90 +1,62 @@
-import { findIndex, move, set, lensProp } from "ramda";
+import { findIndex, move, set, lensProp, equals, indexOf } from "ramda";
 
 const getFieldPrefix = field => field.split("-")[0];
-
-const orderRowsByIndex = rows =>
-  rows.sort((a, b) => ("" + a.column).localeCompare(b.column));
 
 const getMatchingRows = (gridApi, query) => {
   const matchingCells = [];
 
   gridApi.api.forEachNode((node, index) => {
     const rowMatchingCells = Object.keys(node.data).reduce((acc, key) => {
-      if (key.split("-")[0] === "athlete" && node.data[key].includes(query)) {
-        return [...acc, { column: key, rowIndex: index, node }];
+        if (key.split("-")[0] === "athlete" && node.data[key].includes(query)) {
+        return [...acc,{highlightIndex: +key.split("-")[1] , rowIndex: index, node}];
       }
 
       return acc;
     }, []);
-
     matchingCells.push(...rowMatchingCells);
   });
 
   return matchingCells;
 };
 
-const getHighlightRowIndex = (row, matchingRows) => {
-  const orderedrows = orderRowsByIndex(matchingRows);
+const getOrderedRows = matchingRows => matchingRows.sort((a, b) =>
+    a.highlightIndex - b.highlightIndex
+);
 
-  return !row
-    ? 0
-    : findIndex(
-        ({ column, rowIndex }) =>
-          column === row.column && rowIndex === row.rowIndex,
-        orderedrows
-      );
+const params = {
+  force: true,
 };
 
-const getNextHighlightRowIndex = (highlightRow, matchingRows) => {
-  const highlightIndex = getHighlightRowIndex(highlightRow, matchingRows);
-
-  return highlightIndex === -1 || highlightIndex === matchingRows.length - 1
-    ? 0
-    : highlightIndex + 1;
-};
-
-const getNextHighlightRow = (highlightRow, matchingRows) => {
-  const nextHighlightIndex = getNextHighlightRowIndex(
-    highlightRow,
-    matchingRows
-  );
-
-  return matchingRows[nextHighlightIndex];
-};
+const getCurrentHighlight = orderedRows => orderedRows.filter(row => {
+  if(row.node.data[`highlight-${row.highlightIndex}`] === true) return true
+})
 
 export const flashMatchRow = ({
   gridApi,
-  highlightRow,
-  setHighlightRow,
-  horizontalMode
 }) => query => {
   const matchingRows = getMatchingRows(gridApi, query);
+  
+  if(matchingRows.length === 0) return
+  
+  const orderedRows = getOrderedRows(matchingRows)
+  const currentHighlightNode = getCurrentHighlight(orderedRows)[0]
 
-  if (!matchingRows.length) {
-    setHighlightRow(null);
-  } else {
-    const nextHighlightRow = getNextHighlightRow(highlightRow, matchingRows);
-    setHighlightRow(nextHighlightRow);
-
-    if (horizontalMode) {
-      gridApi.api.ensureColumnVisible(nextHighlightRow.column);
-
-      const groupId = nextHighlightRow.column.split("-")[1];
-      const rowGroup = gridApi.columnApi.getColumnGroup(groupId);
-      const rowGroupColumnFields = rowGroup.children.map(({ colId }) => colId);
-
-      gridApi.api.flashCells({
-        columns: rowGroupColumnFields,
-        rowNodes: [nextHighlightRow.node]
-      });
-    } else {
-      gridApi.api.ensureNodeVisible(nextHighlightRow.node, "middle");
-
-      gridApi.api.flashCells({
-        rowNodes: [nextHighlightRow.node]
-      });
+  if(!currentHighlightNode || equals(currentHighlightNode, orderedRows[orderedRows.length-1])){   
+    orderedRows[0].node.setDataValue(`highlight-${orderedRows[0].highlightIndex}`, true)
+  
+    if(equals(currentHighlightNode, orderedRows[orderedRows.length-1])){
+      orderedRows[orderedRows.length-1].node.setDataValue(`highlight-${orderedRows[orderedRows.length-1].highlightIndex}`, false)
     }
   }
+  else{
+    const currentIndex = indexOf(currentHighlightNode)(orderedRows)
+    const nextIndex = currentIndex + 1
+
+    orderedRows[currentIndex].node.setDataValue(`highlight-${orderedRows[currentIndex].highlightIndex}`, false)
+    orderedRows[nextIndex].node.setDataValue(`highlight-${orderedRows[nextIndex].highlightIndex}`, true)
+  }
+  
+  gridApi.api.refreshCells(params)
 };
 
 export const updatefieldInAllGroups = (gridApi, field, nextValue) => {
